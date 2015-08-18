@@ -1,5 +1,46 @@
 define(['pv'], function(pv) {
 
+function deselectAll(viewer) {
+  viewer.forEach(function(go) {
+    if (go.selection === undefined) {
+      return;
+    }
+    go.setSelection(go.structure().createEmptyView());
+  });
+  viewer.requestRedraw();
+}
+
+function selectAll(viewer) {
+  viewer.forEach(function(go) {
+    if (go.selection === undefined) {
+      return;
+    }
+    go.setSelection(go.structure());
+  });
+  viewer.requestRedraw();
+}
+
+function setOpacityOfSelected(viewer, opacity) {
+  viewer.forEach(function(go) {
+    if (go.selection === undefined) {
+      return;
+    }
+    go.setOpacity(opacity, go.selection());
+  });
+  viewer.requestRedraw();
+}
+
+function colorSelected(viewer, colorOp) {
+  viewer.forEach(function(go) {
+    if (go.selection === undefined) {
+      return;
+    }
+    go.colorBy(colorOp, go.selection());
+  });
+  viewer.requestRedraw();
+}
+
+
 function rangeSelectTo(sel, atom) {
   var targetIndex = atom.full().residue().index();
   var targetChain = atom.residue().chain().name();
@@ -42,6 +83,19 @@ function rangeSelectTo(sel, atom) {
       chain.addResidue(residue.full(), true);
     }
   });
+  return extended;
+}
+
+function extendSelectionToChain(sel, atom) {
+  var targetChain = atom.residue().chain().name();
+  var extended = sel.createEmptyView();
+  sel.eachChain(function(chain) {
+    if (chain.name() !== targetChain) {
+      extended.addChain(chain, true);
+      return;
+    }
+  });
+  extended.addChain(atom.residue().chain().full(), true);
   return extended;
 }
 
@@ -135,7 +189,12 @@ function extendSelectionToHsc(sel) {
 
 return {
   rangeSelectTo : rangeSelectTo,
-  extendSelectionToHsc : extendSelectionToHsc
+  extendSelectionToHsc : extendSelectionToHsc,
+  colorSelected : colorSelected,
+  setOpacityOfSelected : setOpacityOfSelected,
+  deselectAll : deselectAll,
+  selectAll : selectAll,
+  extendSelectionToChain : extendSelectionToChain
 };
 
 });

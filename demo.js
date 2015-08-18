@@ -20,7 +20,7 @@ pv = PV;
 viewer = pv.Viewer(document.getElementById('viewer'), { 
     width : 'auto', height: 'auto', antialias : true, 
     outline : true, quality : 'medium', style : 'hemilight',
-    selectionColor : 'white',
+    selectionColor : 'white', transparency : 'screendoor',
     background : '#ccc', animateTime: 500, doubleClick : null
 });
 
@@ -104,6 +104,15 @@ function extendSelection(sel) {
 }
 
 viewer.on('keydown', function(ev) {
+  if (ev.which === 27) {
+    // ESC
+    act.deselectAll(viewer);
+  }
+  if (ev.which === 76) {
+    if (ev.metaKey) {
+      ev.preventDefault();
+    }
+  }
   if (ev.which === 38) {
     console.log('extend selection');
     viewer.forEach(function(go) {
@@ -116,13 +125,59 @@ viewer.on('keydown', function(ev) {
   }
   if (ev.which === 13) {
     var allSelections = [];
+    var atomCount = 0;
     viewer.forEach(function(go) {
       if (go.selection !== undefined) {
+        atomCount += go.selection().atomCount();
         allSelections.push(go.selection());
       }
     });
-    viewer.fitTo(allSelections);
+    if (atomCount > 0 && !ev.shiftKey) {
+      viewer.fitTo(allSelections);
+    } else {
+      viewer.autoZoom();
+    } 
   }
+});
+
+$('#color-uniform').click(function() {
+  act.colorSelected(viewer, pv.color.uniform('red'));
+});
+
+$('#color-chain').click(function() {
+  act.colorSelected(viewer, pv.color.byChain());
+});
+$('#color-element').click(function() {
+  act.colorSelected(viewer, pv.color.byElement());
+});
+$('#color-ss').click(function() {
+  act.colorSelected(viewer, pv.color.bySS());
+});
+
+$('#color-ss-succ').click(function() {
+  act.colorSelected(viewer, pv.color.ssSuccession());
+});
+
+$('#color-rainbow').click(function() {
+  act.colorSelected(viewer, pv.color.rainbow('rnum'));
+});
+
+$('#visibility-hidden').click(function() {
+  act.setOpacityOfSelected(viewer, 0.0);
+});
+$('#visibility-semi').click(function() {
+  act.setOpacityOfSelected(viewer, 0.5);
+});
+$('#visibility-opaque').click(function() {
+  act.setOpacityOfSelected(viewer, 1.0);
+});
+
+$('#sel-all').click(function() {
+  act.selectAll(viewer);
+});
+
+$('#sel-deselect').click(function() {
+  act.deselectAll(viewer);
 });
 
 
@@ -140,18 +195,30 @@ viewer.on('click', function(picked, ev) {
     viewer.requestRedraw();
     return;
   }
+  if (ev.altKey) {
+    var sel = act.extendSelectionToChain(picked.node().selection(), picked.target());
+    picked.node().setSelection(sel);
+    level = LEVEL_RESIDUE;
+    viewer.requestRedraw();
+    return;
+  }
   var extendSelection = ev.shiftKey;
   level = LEVEL_RESIDUE;
   var sel;
   if (extendSelection) {
     sel = picked.node().selection();
   } else {
-    sel = picked.node().structure().createEmptyView();
+    sel = picked.node().selection();
+    console.log(sel);
+    if (sel.residueCount() !== 1 ||
+        sel.atoms()[0].residue().full() !== picked.target().residue().full()) {
+      sel = picked.node().structure().createEmptyView();
+    }
   }
   if (!sel.removeAtom(picked.target(), true)) {
-    // in case atom was not part of the view, we have to add it, because it 
-    // wasn't selected before. Otherwise removeAtom took care of it.
-    sel.addAtom(picked.target());
+      // in case atom was not part of the view, we have to add it, because it 
+      // wasn't selected before. Otherwise removeAtom took care of it.
+      sel.addAtom(picked.target());
   } 
   picked.node().setSelection(sel);
   viewer.requestRedraw();
