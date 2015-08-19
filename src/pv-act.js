@@ -41,6 +41,67 @@ function colorSelected(viewer, colorOp) {
 }
 
 
+function selectNextResidue(viewer, extendSelection) {
+  viewer.forEach(function(go) {
+    if (go.selection === undefined) {
+      return;
+    }
+    var sel = extendSelection ? go.selection() : go.structure().createEmptyView();
+    go.selection().eachChain(function(chain) {
+      // find residue with highest index
+      var maxIndex = 0;
+      chain.eachResidue(function(r) {
+        maxIndex = Math.max(r.full().index(), maxIndex);
+      });
+      var next = maxIndex + 1;
+      if (next >= chain.full().residues().length) {
+        if (extendSelection) {
+          return;
+        }
+        next = maxIndex;
+      }
+      var selChain = sel.chain(chain.name());
+      if (!selChain) {
+        selChain = sel.addChain(chain);
+      }
+      selChain.addResidue(chain.full().residues()[next], true);
+      
+    });
+    go.setSelection(sel);
+  });
+  viewer.requestRedraw();
+}
+
+function selectPrevResidue(viewer, extendSelection) {
+  viewer.forEach(function(go) {
+    if (go.selection === undefined) {
+      return;
+    }
+    var sel = extendSelection ? go.selection() : go.structure().createEmptyView();
+    go.selection().eachChain(function(chain) {
+      // find residue with highest index
+      var minIndex = chain.residues()[0].full().index();
+      chain.eachResidue(function(r) {
+        minIndex = Math.min(r.full().index(), minIndex);
+      });
+      var prev = minIndex - 1;
+      if (prev < 0) {
+        if (extendSelection) {
+          return;
+        }
+        prev = 0;
+      }
+      var selChain = sel.chain(chain.name());
+      if (!selChain) {
+        selChain = sel.addChain(chain);
+      }
+      selChain.addResidue(chain.full().residues()[prev], true);
+    });
+    go.setSelection(sel);
+  });
+  viewer.requestRedraw();
+}
+
 function rangeSelectTo(sel, atom) {
   var targetIndex = atom.full().residue().index();
   var targetChain = atom.residue().chain().name();
@@ -194,7 +255,9 @@ return {
   setOpacityOfSelected : setOpacityOfSelected,
   deselectAll : deselectAll,
   selectAll : selectAll,
-  extendSelectionToChain : extendSelectionToChain
+  extendSelectionToChain : extendSelectionToChain,
+  selectNextResidue : selectNextResidue,
+  selectPrevResidue : selectPrevResidue
 };
 
 });

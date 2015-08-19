@@ -104,9 +104,40 @@ function extendSelection(sel) {
 }
 
 viewer.on('keydown', function(ev) {
+  console.log(ev.which);
+  var rotationSpeed = 0.05;
+  if ((ev.which === 50 || ev.which === 52 || 
+      ev.which === 54 || ev.which === 56) && ev.shiftKey) {
+    rotationSpeed = 0.25;
+    ev.preventDefault();
+  }
+  if (ev.which === 50) {
+    viewer.rotate([1,0,0], Math.PI * rotationSpeed);
+    return;
+  }
+  if (ev.which === 56) {
+    viewer.rotate([1,0,0], -Math.PI * rotationSpeed);
+    return;
+  }
+  if (ev.which === 52) {
+    viewer.rotate([0,1,0], Math.PI * rotationSpeed);
+    return;
+  }
+  if (ev.which === 54) {
+    viewer.rotate([0,1,0], -Math.PI * rotationSpeed);
+    return;
+  }
   if (ev.which === 27) {
-    // ESC
     act.deselectAll(viewer);
+    return;
+  }
+  if (ev.which === 39) {
+    act.selectNextResidue(viewer, ev.shiftKey);
+    return;
+  }
+  if (ev.which === 37) {
+    act.selectPrevResidue(viewer, ev.shiftKey);
+    return;
   }
   if (ev.which === 76) {
     if (ev.metaKey) {
@@ -183,6 +214,7 @@ $('#sel-deselect').click(function() {
 
 viewer.on('click', function(picked, ev) {
   if (picked === null || picked.target() === null) {
+    act.deselectAll(viewer);
     return;
   }
   if (picked.node().structure === undefined) {
