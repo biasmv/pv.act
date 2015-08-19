@@ -103,9 +103,66 @@ function extendSelection(sel) {
   return extended;
 }
 
+var parent = document.getElementById('viewer');
+
+viewer.on('mousemove', updateSpinAxis);
+document.addEventListener('mouseup', stopSpinAxisUpdate);
+viewer.on('mousedown', startSpinAxisUpdate);
+
+
+var prevMousePos = null;
+
+function startSpinAxisUpdate(ev) {
+  if (ev.button !== 0) {
+    return;
+  }
+  prevMousePos = {  x : ev.clientX, y : ev.clientY };
+}
+
+var lastSpinAxis = [0,1,0];
+var lastSpeed = Math.PI/8;
+function updateSpinAxis(ev) {
+  if (ev.button !== 0 || prevMousePos === null || !viewer.spin()) {
+    return;
+  }
+  var mousePos = {  x : ev.clientX, y : ev.clientY };
+  var delta = { 
+    x : mousePos.x - prevMousePos.x, 
+    y : mousePos.y - prevMousePos.y 
+  };
+  prevMousePos = mousePos;
+  var speed = Math.sqrt(delta.x * delta.x + delta.y * delta.y);
+  if (delta.x == 0 && delta.y == 0) {
+    return;
+  }
+  delta.x /= speed;
+  delta.y /= speed;
+  lastSpinAxis = [-delta.y, -delta.x, 0.0];
+  lastSpeed = 0.001 * speed;
+  if (viewer.spin()) {
+    viewer.spin(lastSpeed, lastSpinAxis);
+  }
+}
+
+function stopSpinAxisUpdate(ev) {
+  if (ev.button !== 0) {
+    return;
+  }
+  prevMousePos = null;
+}
+
 viewer.on('keydown', function(ev) {
   console.log(ev.which);
   var rotationSpeed = 0.05;
+  if (ev.which === 32) {
+    if (!viewer.spin()) {
+      console.log(lastSpeed, lastSpinAxis);
+      viewer.spin(lastSpeed, lastSpinAxis);
+    } else {
+      viewer.spin(false);
+    }
+    return;
+  }
   if ((ev.which === 50 || ev.which === 52 || 
       ev.which === 54 || ev.which === 56) && ev.shiftKey) {
     rotationSpeed = 0.25;
