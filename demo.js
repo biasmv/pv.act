@@ -248,7 +248,7 @@ $('#color-ss-succ').click(function() {
 });
 
 $('#color-rainbow').click(function() {
-  act.colorSelected(viewer, pv.color.rainbow('rnum'));
+  act.colorSelected(viewer, pv.color.byResidueProp('num'));
 });
 
 $('#visibility-hidden').click(function() {
