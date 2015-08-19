@@ -138,8 +138,9 @@ function updateSpinAxis(ev) {
   delta.x /= speed;
   delta.y /= speed;
   lastSpinAxis = [-delta.y, -delta.x, 0.0];
-  lastSpeed = 0.001 * speed;
+  lastSpeed = 0.3;//0.01 * speed;
   if (viewer.spin()) {
+    console.log(lastSpeed, lastSpinAxis);
     viewer.spin(lastSpeed, lastSpinAxis);
   }
 }
