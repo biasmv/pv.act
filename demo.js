@@ -213,6 +213,10 @@ viewer.on('keydown', function(ev) {
     viewer.requestRedraw();
   }
   if (ev.which === 13) {
+    if (ev.shiftKey) {
+      viewer.autoZoom();
+      return;
+    }
     var allSelections = [];
     var atomCount = 0;
     viewer.forEach(function(go) {
