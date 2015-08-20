@@ -147,12 +147,14 @@ var level = LEVEL_ATOM;
 
 
 function extendSelectionChain(sel, extended) {
+  console.log('extendSelectionChain');
   // extend selection chain by chain
   sel.eachChain(function(c) {
     extended.addChain(c.full(), true);
   });
 }
 function extendSelectionResidues(sel, extended) {
+  console.log('extendSelectionResidues');
   // extend selection chain by chain
   sel.eachChain(function(c) {
     // get index in full chain
@@ -160,12 +162,13 @@ function extendSelectionResidues(sel, extended) {
     var selectedResidues = c.residues();
     var toBeAdded = [];
     var alreadyAdded = {};
+    console.log(selectedResidues.length);
     for (var i = 0; i < selectedResidues.length; ++i) {
       var r = selectedResidues[i];
       var fullIndex = r.full().index();
       var currentIndex = fullIndex;
       while (currentIndex >=0 && 
-             allResidues[fullIndex].ss() == allResidues[currentIndex].ss()) {
+             allResidues[fullIndex].ss() === allResidues[currentIndex].ss()) {
         var cr = allResidues[currentIndex];
         if (alreadyAdded[currentIndex] !== true) {
           toBeAdded.push(cr);
@@ -193,18 +196,27 @@ function extendSelectionResidues(sel, extended) {
   });
 }
 
+function extendSelectionToResidues(sel, extended) {
+  sel.eachChain(function(chain) {
+    if (chain.residues().length === 0) {
+      return;
+    }
+    var eChain = extended.addChain(chain);
+    chain.eachResidue(function(residue) {
+      eChain.addResidue(residue.full(), true);
+    });
+  });
+}
+
 function extendSelection(sel) {
   var extended = sel.full().createEmptyView();
-  if (level == LEVEL_ATOM) {
-  } else if (level == LEVEL_RESIDUE) {
+  if (level === LEVEL_ATOM) {
+    extendSelectionToResidues(sel, extended);
+  } else if (level === LEVEL_RESIDUE) {
     extendSelectionResidues(sel, extended);
+    console.log(extended.atomCount());
   } else {
     extendSelectionChain(sel, extended);
-  }
-  if (extended.atomCount() > 0) {
-    level = Math.min(level + 1, LEVEL_CHAIN);
-  }  else {
-    level = LEVEL_ATOM;
   }
   return extended;
 }
@@ -273,8 +285,9 @@ function selectLigand() {
 }
 
 viewer.on('keydown', function(ev) {
-  console.log(ev.which);
+  console.log(ev);
   var rotationSpeed = 0.05;
+  
   if (ev.which === 65 && ev.metaKey) {
     act.selectAll(viewer);
     ev.preventDefault();
@@ -334,12 +347,19 @@ viewer.on('keydown', function(ev) {
   }
   if (ev.which === 38) {
     console.log('extend selection');
+    var atomCount = 0;
     viewer.forEach(function(go) {
       if (go.selection !== undefined) {
         var extended = extendSelection(go.selection());
+        atomCount += extended.atomCount();
         go.setSelection(extended);
       }
     });
+    if (atomCount > 0) {
+      level = Math.min(level + 1, LEVEL_CHAIN);
+    }  else {
+      level = LEVEL_ATOM;
+    }
     viewer.requestRedraw();
   }
   if (ev.which === 13) {
@@ -451,7 +471,11 @@ viewer.on('click', function(picked, ev) {
     return;
   }
   var extendSelection = ev.shiftKey;
-  level = LEVEL_RESIDUE;
+  if (picked.connectivity() == 'full') {
+    level = LEVEL_ATOM;
+  } else {
+    level = LEVEL_RESIDUE;
+  }
   var sel;
   if (extendSelection) {
     sel = picked.node().selection();
