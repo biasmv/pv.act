@@ -35,6 +35,17 @@ DisplayGroup.prototype = {
   isLigandShown : function() {
     return this._ligand && this._ligand.visible();
   },
+
+  selectAllWater : function() {
+    if (this._water !== null) {
+      this._water.setSelection(this._water.structure());
+    }
+  },
+  selectAllLigands : function() {
+    if (this._ligand !== null) {
+      this._ligand.setSelection(this._ligand.structure());
+    }
+  },
   showWater: function(show) {
     if (show) {
       if (this._water === null) {
@@ -247,9 +258,33 @@ function stopSpinAxisUpdate(ev) {
   prevMousePos = null;
 }
 
+function selectWater() {
+  displayGroups.forEach(function(dg) {
+    dg.selectAllWater();
+  });
+  viewer.requestRedraw();
+}
+
+function selectLigand() {
+  displayGroups.forEach(function(dg) {
+    dg.selectAllLigands();
+  });
+  viewer.requestRedraw();
+}
+
 viewer.on('keydown', function(ev) {
   console.log(ev.which);
   var rotationSpeed = 0.05;
+  if (ev.which === 65 && ev.metaKey) {
+    act.selectAll(viewer);
+    ev.preventDefault();
+    return;
+  }
+  if (ev.which === 76 && ev.metaKey) {
+    selectLigand();
+    ev.preventDefault();
+    return;
+  }
   if (ev.which === 32) {
     if (!viewer.spin()) {
       console.log(lastSpeed, lastSpinAxis);
@@ -362,6 +397,13 @@ $('#visibility-opaque').click(function() {
 
 $('#sel-all').click(function() {
   act.selectAll(viewer);
+});
+
+$('#sel-water').click(function() {
+  selectWater();
+});
+$('#sel-ligands').click(function() {
+  selectLigand();
 });
 
 $('#show-water').click(function() {
