@@ -15,6 +15,97 @@ var pv;
 require(['pv', 'pv-act'], function(PV, act) {
 
 
+
+function DisplayGroup(name, viewer, structure) {
+  this._name = name
+  this._viewer = viewer;
+  this._structure = structure;
+  this._water = null;
+  this._protein = null;
+  this._ligand = null;
+}
+
+DisplayGroup.prototype = {
+  isWaterShown : function(show) {
+    return this._water && this._water.visible();
+  },
+  isProteinShown : function() {
+    return this._protein && this._protein.visible();
+  },
+  isLigandShown : function() {
+    return this._ligand && this._ligand.visible();
+  },
+  showWater: function(show) {
+    if (show) {
+      if (this._water === null) {
+        this._water =  this._viewer.spheres(this._name + '.water', 
+                                              this._structure.select({rnames : ['DOD', 'HOH']}));
+      }
+      this._water.show();
+      this._viewer.requestRedraw();
+    }
+    if (!show && this._water !== null) {
+      this._water.hide();
+      this._viewer.requestRedraw();
+    }
+  },
+  ligandStructure : function() {
+    var ligands = this._structure.createEmptyView();
+    // return everything that is not part of a trace and not a water molecule
+    this._structure.eachChain(function(chain) {
+      var traces = chain.backboneTraces();
+      var residues = chain.residues();
+      var inTrace = [];
+      for (var i = 0; i < traces.length; ++i) {
+        for (var j = 0; j < traces[i].length(); ++j) {
+          var residue = traces[i].residueAt(j);
+          inTrace[residue.index()] = true;
+        }
+      }
+      var ligandChain = null;
+      for (var i = 0; i < residues.length; ++i) {
+        if (inTrace[i] === true || residues[i].isWater()) {
+          continue;
+        }
+        if (!ligandChain) {
+          ligandChain = ligands.addChain(chain);
+        }
+        ligandChain.addResidue(residues[i], true);
+      }
+    });
+    return ligands;
+  },
+  showLigand : function(show) {
+    if (show) {
+      if (this._ligand === null) {
+        var ligand = this.ligandStructure();
+        this._ligand =  this._viewer.spheres(this._name + '.ligand', 
+                                              ligand);
+      }
+      this._ligand.show();
+      this._viewer.requestRedraw();
+    }
+    if (!show && this._ligand !== null) {
+      this._ligand.hide();
+      this._viewer.requestRedraw();
+    }
+  },
+  showProtein : function(show) {
+    if (show) {
+      if (this._protein === null) {
+        this._protein =  this._viewer.cartoon(this._name + '.protein', 
+                                              this._structure);
+      }
+      this._protein.show();
+      this._viewer.requestRedraw();
+    }
+    if (!show && this._protein !== null) {
+      this._protein.hide();
+      this._viewer.requestRedraw();
+    }
+  }
+};
+
 $(document).foundation();
 pv = PV;
 viewer = pv.Viewer(document.getElementById('viewer'), { 
@@ -25,10 +116,14 @@ viewer = pv.Viewer(document.getElementById('viewer'), {
 });
 
 
-pv.io.fetchPdb('/pdbs/4ake.pdb', function(s) {
+var displayGroups = [];
+var pdb_name = '1r6a';
+pv.io.fetchPdb('/pdbs/'+pdb_name+'.pdb', function(s) {
+  displayGroups.push(new DisplayGroup(pdb_name, viewer, s));
   viewer.on('viewerReady', function() {
-    var go = viewer.cartoon('crambin', s);
-    viewer.setRotation(pv.viewpoint.principalAxes(go));
+    displayGroups[0].showProtein(true);
+    displayGroups[0].showLigand(true);
+    viewer.setRotation(pv.viewpoint.principalAxes(displayGroups[0]._protein));
     viewer.autoZoom();
   });
 });
@@ -267,6 +362,23 @@ $('#visibility-opaque').click(function() {
 
 $('#sel-all').click(function() {
   act.selectAll(viewer);
+});
+
+$('#show-water').click(function() {
+  displayGroups.forEach(function(dg) {
+    dg.showWater(!dg.isWaterShown());
+  });
+});
+$('#show-protein').click(function() {
+  displayGroups.forEach(function(dg) {
+    dg.showProtein(!dg.isProteinShown());
+  });
+});
+
+$('#show-ligand').click(function() {
+  displayGroups.forEach(function(dg) {
+    dg.showLigand(!dg.isLigandShown());
+  });
 });
 
 $('#sel-deselect').click(function() {
