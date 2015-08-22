@@ -448,6 +448,23 @@ $('#sel-deselect').click(function() {
 });
 
 
+viewer.on('doubleClick', function(picked, ev) {
+  if (picked === null || picked.target() === null) {
+    return;
+  }
+  if (picked.node().structure === undefined) {
+    return;
+  }
+  var newSel = act.extendSelectionToChain(picked.node().selection(), 
+                                          picked.target());
+  act.deselectAll(viewer);
+  picked.node().setSelection(newSel);
+  if (newSel.atomCount() > 0) {
+    viewer.fitTo(newSel);
+  }
+  viewer.requestRedraw();
+});
+
 viewer.on('click', function(picked, ev) {
   if (picked === null || picked.target() === null) {
     act.deselectAll(viewer);
