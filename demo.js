@@ -283,11 +283,11 @@ viewer.on('keypress', function(ev) {
   // these must be on the keypress event because we need the translated 
   // key codes. The + for example might only be accessible when 
   // calculating through shift+keypress.
-  if (ev.keyCode === 43 /* + */) {
+  if (ev.charCode === 43 /* + */) {
     viewer.setZoom(viewer.zoom() * 0.95);
     viewer.requestRedraw();
   }
-  if (ev.keyCode === 95 /* - */) {
+  if (ev.charCode === 45 /* - */) {
     viewer.setZoom(viewer.zoom() * 1.05);
     viewer.requestRedraw();
   }
