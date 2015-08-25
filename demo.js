@@ -147,14 +147,12 @@ var level = LEVEL_ATOM;
 
 
 function extendSelectionChain(sel, extended) {
-  console.log('extendSelectionChain');
   // extend selection chain by chain
   sel.eachChain(function(c) {
     extended.addChain(c.full(), true);
   });
 }
 function extendSelectionResidues(sel, extended) {
-  console.log('extendSelectionResidues');
   // extend selection chain by chain
   sel.eachChain(function(c) {
     // get index in full chain
@@ -162,7 +160,6 @@ function extendSelectionResidues(sel, extended) {
     var selectedResidues = c.residues();
     var toBeAdded = [];
     var alreadyAdded = {};
-    console.log(selectedResidues.length);
     for (var i = 0; i < selectedResidues.length; ++i) {
       var r = selectedResidues[i];
       var fullIndex = r.full().index();
@@ -214,7 +211,6 @@ function extendSelection(sel) {
     extendSelectionToResidues(sel, extended);
   } else if (level === LEVEL_RESIDUE) {
     extendSelectionResidues(sel, extended);
-    console.log(extended.atomCount());
   } else {
     extendSelectionChain(sel, extended);
   }
@@ -258,7 +254,6 @@ function updateSpinAxis(ev) {
   lastSpinAxis = [-delta.y, -delta.x, 0.0];
   lastSpeed = 0.3;//0.01 * speed;
   if (viewer.spin()) {
-    console.log(lastSpeed, lastSpinAxis);
     viewer.spin(lastSpeed, lastSpinAxis);
   }
 }
@@ -284,8 +279,22 @@ function selectLigand() {
   viewer.requestRedraw();
 }
 
+viewer.on('keypress', function(ev) {
+  // these must be on the keypress event because we need the translated 
+  // key codes. The + for example might only be accessible when 
+  // calculating through shift+keypress.
+  if (ev.keyCode === 43 /* + */) {
+    viewer.setZoom(viewer.zoom() * 0.95);
+    viewer.requestRedraw();
+  }
+  if (ev.keyCode === 95 /* - */) {
+    viewer.setZoom(viewer.zoom() * 1.05);
+    viewer.requestRedraw();
+  }
+});
+
+
 viewer.on('keydown', function(ev) {
-  console.log(ev);
   var rotationSpeed = 0.05;
   
   if (ev.which === 65 && ev.metaKey) {
@@ -300,7 +309,6 @@ viewer.on('keydown', function(ev) {
   }
   if (ev.which === 32) {
     if (!viewer.spin()) {
-      console.log(lastSpeed, lastSpinAxis);
       viewer.spin(lastSpeed, lastSpinAxis);
     } else {
       viewer.spin(false);
@@ -313,19 +321,35 @@ viewer.on('keydown', function(ev) {
     ev.preventDefault();
   }
   if (ev.which === 50) {
-    viewer.rotate([1,0,0], Math.PI * rotationSpeed);
+    if (ev.altKey) {
+      viewer.translate([0,1,0]);
+    } else {
+      viewer.rotate([1,0,0], Math.PI * rotationSpeed);
+    }
     return;
   }
   if (ev.which === 56) {
-    viewer.rotate([1,0,0], -Math.PI * rotationSpeed);
+    if (ev.altKey) {
+      viewer.translate([0,-1,0]);
+    } else {
+      viewer.rotate([1,0,0], -Math.PI * rotationSpeed);
+    }
     return;
   }
   if (ev.which === 52) {
-    viewer.rotate([0,1,0], Math.PI * rotationSpeed);
+    if (ev.altKey) {
+      viewer.translate([-1,0,0]);
+    } else {
+      viewer.rotate([0,1,0], Math.PI * rotationSpeed);
+    }
     return;
   }
   if (ev.which === 54) {
-    viewer.rotate([0,1,0], -Math.PI * rotationSpeed);
+    if (ev.altKey) {
+      viewer.translate([1,0,0]);
+    } else {
+      viewer.rotate([0,1,0], -Math.PI * rotationSpeed);
+    }
     return;
   }
   if (ev.which === 27) {
@@ -346,7 +370,6 @@ viewer.on('keydown', function(ev) {
     }
   }
   if (ev.which === 38) {
-    console.log('extend selection');
     var atomCount = 0;
     viewer.forEach(function(go) {
       if (go.selection !== undefined) {
@@ -498,7 +521,6 @@ viewer.on('click', function(picked, ev) {
     sel = picked.node().selection();
   } else {
     sel = picked.node().selection();
-    console.log(sel);
     if (sel.residueCount() !== 1 ||
         sel.atoms()[0].residue().full() !== picked.target().residue().full()) {
       sel = picked.node().structure().createEmptyView();
