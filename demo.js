@@ -121,7 +121,7 @@ $(document).foundation();
 pv = PV;
 viewer = pv.Viewer(document.getElementById('viewer'), { 
     width : 'auto', height: 'auto', antialias : true, 
-    outline : true, quality : 'medium', style : 'hemilight',
+    outline : true, quality : 'medium', style : 'phong',
     selectionColor : 'white', transparency : 'screendoor',
     background : '#ccc', animateTime: 500, doubleClick : null
 });
